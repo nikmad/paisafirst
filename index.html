@@ -1,158 +1,303 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>PaisaFirst</title>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
   </script>
 
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      margin: 40px;
-      background: #f5f7fa;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    canvas {
-      margin-top: 20px;
-    }
-  </style>
+ <style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+
+  h1 {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: #94a3b8;
+  }
+
+  input[type="file"] {
+    margin-top: 10px;
+    color: white;
+  }
+
+  button {
+    padding: 10px 20px;
+    margin-top: 15px;
+    background: #22c55e;
+    color: black;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #16a34a;
+  }
+
+  #total {
+    margin-top: 20px;
+    font-size: 20px;
+    color: #4ade80;
+  }
+
+  canvas {
+    margin-top: 20px;
+    max-width: 100%;
+  }
+
+  .charts {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+
+  .chart-box {
+    flex: 1;
+    min-width: 250px;
+    background: #0f172a;
+    padding: 15px;
+    border-radius: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 14px;
+  }
+
+  th {
+    background: #334155;
+    padding: 10px;
+  }
+
+  td {
+    padding: 8px;
+    border-bottom: 1px solid #334155;
+  }
+
+  tr:hover {
+    background: #1e293b;
+  }
+
+  select {
+    background: #0f172a;
+    color: white;
+    border: 1px solid #475569;
+    padding: 5px;
+    border-radius: 5px;
+  }
+</style>
 </head>
 
 <body>
 
 <div class="container">
   <h1>PaisaFirst 💰</h1>
-  <p>Upload your expense CSV file</p>
+  <p>Upload your GPay PDF</p>
 
   <input type="file" id="fileInput">
   <br>
-  <button onclick="processFile()">Analyze</button>
+  <button onclick="processPDF()">Analyze</button>
 
   <h3 id="total"></h3>
 
-  <canvas id="chart"></canvas>
+    <button onclick="toggleTable()">📄 Show Statement</button>
+
+  <div id="tableContainer" style="display:none; margin-top:20px;"></div>
+
+  <div class="charts">
+
+    <div class="chart-box">
+      <h3>Category Breakdown</h3>
+      <canvas id="categoryChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+      <h3>Bank Breakdown</h3>
+      <canvas id="bankChart"></canvas>
+    </div>
+
+  </div>
+
+
+  
 </div>
 
-<p>Or paste a PDF link:</p>
-<input type="text" id="pdfUrl" placeholder="Paste GitHub raw PDF link" style="width: 80%;">
-<br>
-<button onclick="loadFromUrl()">Load from URL</button>
-
-<button onclick="loadSamplePDF()">Load Sample PDF</button>
-
 <script>
+let transactions = [];
+let categoryChart;
+let bankChart;
+let merchantMap = JSON.parse(localStorage.getItem("merchantMap")) || {};
 
-let chart;
+// Categorization logic
+function categorize(text) {
 
-async function loadFromUrlDirect(url) {
-  try {
-    const pdf = await pdfjsLib.getDocument(url).promise;
+  let key = normalizeMerchant(text);
+
+  // ✅ Your rule (NOW WORKS)
+  if (key.includes("fancy") || key.includes("womens")) {
+    return "Fashion";
+  }
+
+  if (key.includes("mc donald") || key.includes("chicken") || key.includes("fruits") || key.includes("bigbasket")) return "Food";
+  if (key.includes("uber") || key.includes("ola") || key.includes("hpcl")) return "Transport";
+  if (key.includes("power") || key.includes("water")) return "Bills";
+
+    // THEN fallback to user mapping
+  if (merchantMap[key]) {
+    return merchantMap[key];
+  }
+
+  return "Others";
+}
+
+function normalizeMerchant(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z ]/g, "")   // remove symbols
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Process uploaded PDF
+async function processPDF() {
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) {
+    alert("Please upload a PDF");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async function() {
+    const typedarray = new Uint8Array(reader.result);
+
+    const pdf = await pdfjsLib.getDocument(typedarray).promise;
 
     let fullText = "";
 
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-
       const pageText = textContent.items.map(item => item.str).join(" ");
       fullText += pageText + "\n";
     }
 
     parseText(fullText);
-
-  } catch (error) {
-    console.error(error);
-    alert("PDF loading failed (likely CORS or blocked URL)");
-  }
-}
-
-function loadSamplePDF() {
-  const url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
-  loadFromUrlDirect(url);
-}
-
-function categorize(text) {
-  text = text.toLowerCase();
-
-  if (text.includes("swiggy") || text.includes("zomato")) return "Food";
-  if (text.includes("uber") || text.includes("ola")) return "Transport";
-  if (text.includes("amazon") || text.includes("flipkart")) return "Shopping";
-  if (text.includes("rent")) return "Rent";
-
-  return "Others";
-}
-
-function processFile() {
-  const file = document.getElementById("fileInput").files[0];
-
-  if (!file) {
-    alert("Please upload a file");
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    const content = e.target.result;
-    const lines = content.split("\n");
-
-    let categories = {};
-    let total = 0;
-
-    for (let line of lines) {
-      let parts = line.split(",");
-
-      if (parts.length < 2) continue;
-
-      let description = parts[0];
-      let amount = parseFloat(parts[1]);
-
-      if (isNaN(amount)) continue;
-
-      let category = categorize(description);
-
-      if (!categories[category]) categories[category] = 0;
-
-      categories[category] += amount;
-      total += amount;
-    }
-
-    document.getElementById("total").innerText = 
-      "Total Spend: ₹" + total;
-
-    drawChart(categories);
   };
 
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 }
 
-function drawChart(data) {
-  const ctx = document.getElementById("chart");
+// Parse extracted text
+function parseText(text) {
 
-  if (chart) chart.destroy();
+  // RESET transactions
+  transactions = [];
 
-  chart = new Chart(ctx, {
+  let categories = {};
+  let banks = {};
+  let total = 0;
+
+  let txList = text.split(/Paid to /i);
+
+  for (let tx of txList) {
+
+    if (!tx.includes("₹")) continue;
+
+    // Extract merchant
+    let merchant = tx.split("UPI")[0].trim();
+
+    // Extract amount
+    let amountMatch = tx.match(/₹([\d,\.]+)/);
+    if (!amountMatch) continue;
+
+    let amount = parseFloat(amountMatch[1].replace(/,/g, ""));
+    if (isNaN(amount)) continue;
+
+    // Extract bank
+    let bankMatch = tx.match(/Paid by (.*?)(₹|\n)/i);
+    let bank = "Other";
+
+    if (bankMatch) {
+      let bankText = bankMatch[1].toLowerCase();
+
+      if (bankText.includes("standard chartered")) bank = "Standard Chartered";
+      else if (bankText.includes("axis")) bank = "Axis Bank";
+      else if (bankText.includes("state bank")) bank = "SBI";
+      else if (bankText.includes("bank of india")) bank = "BOI";
+    }
+
+    // Skip self transfer
+    if (merchant.toLowerCase().includes("self transfer")) continue;
+
+    let category = categorize(merchant);
+
+    // ✅ Store transaction (CORRECT PLACE)
+    transactions.push({
+      date: extractDate(tx),
+      time: extractTime(tx),
+      merchant: merchant,
+      amount: amount,
+      bank: bank,
+      category: category
+    });
+
+    // Category aggregation
+    if (!categories[category]) categories[category] = 0;
+    categories[category] += amount;
+
+    // Bank aggregation
+    if (!banks[bank]) banks[bank] = 0;
+    banks[bank] += amount;
+
+    total += amount;
+  }
+
+  document.getElementById("total").innerText =
+    "Total Spend: ₹" + total.toFixed(2);
+
+  drawCategoryChart(categories);
+  drawBankChart(banks);
+}
+
+// Draw category pie chart
+function drawCategoryChart(data) {
+  const ctx = document.getElementById("categoryChart");
+
+  if (categoryChart) categoryChart.destroy();
+
+  categoryChart = new Chart(ctx, {
     type: 'pie',
     data: {
       labels: Object.keys(data),
@@ -163,42 +308,147 @@ function drawChart(data) {
   });
 }
 
-async function loadFromUrl() {
-  const url = document.getElementById("pdfUrl").value;
+// Draw bank pie chart
+function drawBankChart(data) {
+  const ctx = document.getElementById("bankChart");
 
-  if (!url) {
-    alert("Enter a valid URL");
-    return;
-  }
+  if (bankChart) bankChart.destroy();
 
-  try {
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
+  bankChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(data),
+      datasets: [{
+        data: Object.values(data)
+      }]
+    }
+  });
+}
 
-    readPDFBuffer(arrayBuffer);
+function extractDate(text) {
+  let match = text.match(/\d{2} \w{3}, \d{4}/);
+  return match ? match[0] : "";
+}
 
-  } catch (error) {
-    alert("Failed to load PDF");
-    console.error(error);
+function extractTime(text) {
+  let match = text.match(/\d{2}:\d{2} (AM|PM)/);
+  return match ? match[0] : "";
+}
+
+function toggleTable() {
+  const container = document.getElementById("tableContainer");
+
+  if (container.style.display === "none") {
+    container.style.display = "block";
+    renderTable();
+  } else {
+    container.style.display = "none";
   }
 }
 
-async function readPDFBuffer(buffer) {
-  const typedarray = new Uint8Array(buffer);
+function renderTable() {
 
-  const pdf = await pdfjsLib.getDocument(typedarray).promise;
+  let html = `
+  <table border="1" style="width:100%; border-collapse:collapse;">
+    <tr>
+      <th>#</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Merchant</th>
+      <th>Amount</th>
+      <th>Bank</th>
+      <th>Category</th>
+    </tr>
+  `;
 
-  let fullText = "";
+  transactions.forEach((tx, index) => {
+    html += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${tx.date}</td>
+        <td>${tx.time}</td>
+        <td>${tx.merchant}</td>
+        <td>₹${tx.amount}</td>
+        <td>${tx.bank}</td>
+        <td>
+          <select onchange="updateCategory(${index}, this.value)">
+            ${getCategoryOptions(tx.category)}
+          </select>
+        </td>
+      </tr>
+    `;
+  });
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const textContent = await page.getTextContent();
+  html += "</table>";
 
-    const pageText = textContent.items.map(item => item.str).join(" ");
-    fullText += pageText + "\n";
-  }
+  document.getElementById("tableContainer").innerHTML = html;
+}
 
-  parseText(fullText);
+function getCategoryOptions(selected) {
+
+  const categories = [
+    "Food",
+    "Groceries",
+    "Transport",
+    "Bills",
+    "Rent",
+    "Shopping",
+    "Health",
+    "Entertainment",
+    "Fuel",
+    "Fashion",
+    "Others"
+  ];
+
+  return categories.map(cat =>
+    `<option value="${cat}" ${cat === selected ? "selected" : ""}>${cat}</option>`
+  ).join("");
+}
+
+function updateCategory(index, newCategory) {
+
+  let merchant = transactions[index].merchant.toLowerCase().trim();
+
+  // ✅ Save mapping
+  merchantMap[merchant] = newCategory;
+
+  // Save to browser
+  localStorage.setItem("merchantMap", JSON.stringify(merchantMap));
+
+  // ✅ Update ALL transactions of same merchant
+  transactions.forEach(tx => {
+    if (tx.merchant.toLowerCase().trim() === merchant) {
+      tx.category = newCategory;
+    }
+  });
+
+  // Refresh everything
+  recalculateCharts();
+  renderTable();
+}
+
+function recalculateCharts() {
+
+  let categories = {};
+  let banks = {};
+  let total = 0;
+
+  transactions.forEach(tx => {
+
+    if (!categories[tx.category]) categories[tx.category] = 0;
+    categories[tx.category] += tx.amount;
+
+    if (!banks[tx.bank]) banks[tx.bank] = 0;
+    banks[tx.bank] += tx.amount;
+
+    total += tx.amount;
+  });
+
+  document.getElementById("total").innerText =
+    "Total Spend: ₹" + total.toFixed(2);
+
+  drawCategoryChart(categories);
+  drawBankChart(banks);
 }
 
 </script>
