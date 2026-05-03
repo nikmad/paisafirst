@@ -47,6 +47,11 @@
   <canvas id="chart"></canvas>
 </div>
 
+<p>Or paste a PDF link:</p>
+<input type="text" id="pdfUrl" placeholder="Paste GitHub raw PDF link" style="width: 80%;">
+<br>
+<button onclick="loadFromUrl()">Load from URL</button>
+
 <script>
 
 let chart;
@@ -120,6 +125,44 @@ function drawChart(data) {
       }]
     }
   });
+}
+
+async function loadFromUrl() {
+  const url = document.getElementById("pdfUrl").value;
+
+  if (!url) {
+    alert("Enter a valid URL");
+    return;
+  }
+
+  try {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+
+    readPDFBuffer(arrayBuffer);
+
+  } catch (error) {
+    alert("Failed to load PDF");
+    console.error(error);
+  }
+}
+
+async function readPDFBuffer(buffer) {
+  const typedarray = new Uint8Array(buffer);
+
+  const pdf = await pdfjsLib.getDocument(typedarray).promise;
+
+  let fullText = "";
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+
+    const pageText = textContent.items.map(item => item.str).join(" ");
+    fullText += pageText + "\n";
+  }
+
+  parseText(fullText);
 }
 
 </script>
