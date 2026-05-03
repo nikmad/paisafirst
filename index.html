@@ -67,6 +67,24 @@ let chart;
 
 async function loadFromUrlDirect(url) {
   try {
+    console.log("Fetching PDF from:", url);
+
+    const response = await fetch(url);
+    console.log("Response status:", response.status);
+
+    const buffer = await response.arrayBuffer();
+    console.log("Buffer size:", buffer.byteLength);
+
+    readPDFBuffer(buffer);
+
+  } catch (error) {
+    console.error("Error loading PDF:", error);
+    alert("Check console (F12) for error");
+  }
+}
+
+async function loadFromUrlDirect(url) {
+  try {
     const response = await fetch(url);
 
     if (!response.ok) {
