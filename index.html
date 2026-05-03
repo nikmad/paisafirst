@@ -16,98 +16,221 @@
 
  <style>
   body {
-    font-family: 'Segoe UI', sans-serif;
     margin: 0;
+    font-family: 'Segoe UI', sans-serif;
     background: #0f172a;
     color: #e2e8f0;
   }
 
-  .container {
-    max-width: 900px;
-    margin: 40px auto;
+  /* MAIN GRID */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 260px 1fr 320px;
+    height: 100vh;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
     background: #1e293b;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    padding: 20px;
+    border-right: 1px solid #334155;
+
+    position: sticky;
+    top: 0;
+    height: 100vh;
   }
 
-  h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
+
+  /* CENTER PANEL (SCROLLABLE TABLE) */
+  .center-panel {
+    overflow-y: auto;
+    padding: 20px;
   }
 
-  p {
-    color: #94a3b8;
+.top-bar {
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;   /* reduced */
+
+  padding: 10px 15px;  /* reduced height */
+  background: #020617;
+  border-bottom: 1px solid #334155;
+}
+
+/* center alignment */
+.upload-wrapper {
+  flex: 1;
+  max-width: calc(100% - 120px);  /* leave space for button */
+}
+
+/* upload box full width */
+.upload-box {
+  width: 70%;
+  padding: 14px;
+
+  background: #020617;
+  border: 2px dashed #334155;
+  border-radius: 10px;
+
+  color: #94a3b8;
+  text-align: center;
+  cursor: pointer;
+
+  transition: all 0.2s;
+}
+
+.upload-box:hover {
+  border-color: #22c55e;
+  color: #e2e8f0;
+}
+
+.upload-box.active {
+  border-color: #22c55e;
+  color: #4ade80;
+}
+
+  /* RIGHT PANEL */
+  .right-panel {
+    background: #1e293b;
+    padding: 20px;
+    border-left: 1px solid #334155;
+
+    position: sticky;
+    top: 0;
+    height: 100vh;
   }
 
-  input[type="file"] {
-    margin-top: 10px;
-    color: white;
-  }
-
+  /* BUTTONS */
   button {
-    padding: 10px 20px;
-    margin-top: 15px;
+    padding: 10px;
+    margin-top: 10px;
+    width: 100%;
     background: #22c55e;
-    color: black;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
-    transition: 0.2s;
   }
 
-  button:hover {
-    background: #16a34a;
-  }
-
+  /* TOTAL */
   #total {
-    margin-top: 20px;
-    font-size: 20px;
+    margin-top: 15px;
     color: #4ade80;
   }
 
-  canvas {
-    margin-top: 20px;
-    max-width: 100%;
-  }
-
-  .charts {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-  }
-
+  /* CHART BOX */
   .chart-box {
-    flex: 1;
-    min-width: 250px;
     background: #0f172a;
     padding: 15px;
     border-radius: 10px;
+    margin-bottom: 20px;
   }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    font-size: 14px;
-  }
+.analyze-btn {
+  flex-shrink: 0;     /* prevents shrinking */
+  width: 80px;       /* fixed clean width */
+  padding: 10px;
+  margin-top: 0;
+}
 
-  th {
-    background: #334155;
-    padding: 10px;
-  }
+  /* TABLE */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
 
-  td {
-    padding: 8px;
-    border-bottom: 1px solid #334155;
-  }
+/* Make table scroll correctly */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
-  tr:hover {
-    background: #1e293b;
-  }
+.table-wrapper {
+  overflow-y: auto;
+  flex: 1;
+  padding: 20px;
+}
 
+.upload-box {
+  width: 100%;
+  padding: 16px;
+  margin-top: 0;
+
+  background: #020617;
+  border: 2px dashed #334155;
+  border-radius: 10px;
+
+  color: #94a3b8;
+  text-align: center;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.upload-box:hover {
+  border-color: #22c55e;
+  background: #020617;
+  color: #e2e8f0;
+}
+
+/* when file selected */
+.upload-box.active {
+  border-color: #22c55e;
+  color: #4ade80;
+}
+
+/* THEAD sticky */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  background: linear-gradient(90deg, #facc15, #fde047);
+  color: #0f172a;
+
+  padding: 12px;
+  font-weight: 700;
+
+  border-bottom: 2px solid #eab308;
+}
+
+/* BODY */
+tbody td {
+  padding: 12px;
+}
+
+/* 🔥 ALTERNATING COLORS */
+tr:nth-child(even) {
+  background: #0f172a;   /* deep navy */
+}
+
+tr:nth-child(odd) {
+  background: #1e293b;   /* deep grey-blue */
+}
+
+/* ✨ HOVER EFFECT */
+tr:hover {
+  background: #334155;
+  transition: 0.2s;
+}
+
+/* ROUND CORNERS */
+tr:first-child th:first-child {
+  border-top-left-radius: 10px;
+}
+
+tr:first-child th:last-child {
+  border-top-right-radius: 10px;
+}
+
+  /* DROPDOWN */
   select {
     background: #0f172a;
     color: white;
@@ -115,41 +238,60 @@
     padding: 5px;
     border-radius: 5px;
   }
+
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>PaisaFirst 💰</h1>
-  <p>Upload your GPay PDF</p>
+  <div class="dashboard">
 
-  <input type="file" id="fileInput">
-  <br>
-  <button onclick="processPDF()">Analyze</button>
+  <!-- LEFT -->
+<div class="left-panel">
+  <h1>💰 PaisaFirst</h1>
+  <p>Your personal expense intelligence</p>
 
   <h3 id="total"></h3>
 
-    <button onclick="toggleTable()">📄 Show Statement</button>
+  <button onclick="toggleTable()">📄 Show Statement</button>
+</div>
 
-  <div id="tableContainer" style="display:none; margin-top:20px;"></div>
+  <!-- CENTER -->
+  <div class="center-panel">
 
-  <div class="charts">
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="upload-wrapper">
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+          <span id="uploadText">📂 Upload your GPay PDF</span>
+        </div>
 
-    <div class="chart-box">
-      <h3>Category Breakdown</h3>
-      <canvas id="categoryChart"></canvas>
+        <input type="file" id="fileInput" style="display:none" onchange="handleFileSelect(event)">
+      </div>
+
+      <button class="analyze-btn" onclick="processPDF()">Analyze</button>
     </div>
 
-    <div class="chart-box">
-      <h3>Bank Breakdown</h3>
-      <canvas id="bankChart"></canvas>
+    <!-- TABLE -->
+    <div class="table-wrapper">
+      <div id="tableContainer"></div>
     </div>
 
   </div>
 
+  <!-- RIGHT -->
+  <div class="right-panel">
+    <div class="chart-box">
+      <h3>Category</h3>
+      <canvas id="categoryChart"></canvas>
+    </div>
 
-  
+    <div class="chart-box">
+      <h3>Bank</h3>
+      <canvas id="bankChart"></canvas>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -291,22 +433,6 @@ function parseText(text) {
   drawBankChart(banks);
 }
 
-// Draw category pie chart
-function drawCategoryChart(data) {
-  const ctx = document.getElementById("categoryChart");
-
-  if (categoryChart) categoryChart.destroy();
-
-  categoryChart = new Chart(ctx, {
-    type: 'pie',
-    data: {
-      labels: Object.keys(data),
-      datasets: [{
-        data: Object.values(data)
-      }]
-    }
-  });
-}
 
 // Draw bank pie chart
 function drawBankChart(data) {
@@ -321,6 +447,31 @@ function drawBankChart(data) {
       datasets: [{
         data: Object.values(data)
       }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: {
+            color: "#ffffff"
+          }
+        },
+        tooltip: {
+          backgroundColor: "#020617",
+          titleColor: "#ffffff",
+          bodyColor: "#e2e8f0",
+          borderColor: "#334155",
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              let value = context.raw;
+              let total = context.dataset.data.reduce((a, b) => a + b, 0);
+              let percent = ((value / total) * 100).toFixed(1);
+
+              return `${context.label}: ₹${value} (${percent}%)`;
+            }
+          }
+        }
+      }
     }
   });
 }
@@ -336,20 +487,14 @@ function extractTime(text) {
 }
 
 function toggleTable() {
-  const container = document.getElementById("tableContainer");
-
-  if (container.style.display === "none") {
-    container.style.display = "block";
-    renderTable();
-  } else {
-    container.style.display = "none";
-  }
+  renderTable();
 }
 
 function renderTable() {
 
   let html = `
   <table border="1" style="width:100%; border-collapse:collapse;">
+  <thead>
     <tr>
       <th>#</th>
       <th>Date</th>
@@ -359,6 +504,7 @@ function renderTable() {
       <th>Bank</th>
       <th>Category</th>
     </tr>
+  </thead>
   `;
 
   transactions.forEach((tx, index) => {
@@ -449,6 +595,52 @@ function recalculateCharts() {
 
   drawCategoryChart(categories);
   drawBankChart(banks);
+}
+
+function drawCategoryChart(data) {
+  const ctx = document.getElementById("categoryChart");
+
+  if (categoryChart) categoryChart.destroy();
+
+  categoryChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(data),
+      datasets: [{
+        data: Object.values(data)
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: {
+            color: "#ffffff"
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let value = context.raw;
+              let total = context.dataset.data.reduce((a, b) => a + b, 0);
+              let percent = ((value / total) * 100).toFixed(1);
+
+              return `${context.label}: ₹${value} (${percent}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+
+  if (file) {
+    document.getElementById("uploadText").innerText = "✅ " + file.name;
+
+    document.querySelector(".upload-box").classList.add("active");
+  }
 }
 
 </script>
