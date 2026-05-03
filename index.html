@@ -67,38 +67,23 @@ let chart;
 
 async function loadFromUrlDirect(url) {
   try {
-    console.log("Fetching PDF from:", url);
+    const pdf = await pdfjsLib.getDocument(url).promise;
 
-    const response = await fetch(url);
-    console.log("Response status:", response.status);
+    let fullText = "";
 
-    const buffer = await response.arrayBuffer();
-    console.log("Buffer size:", buffer.byteLength);
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
 
-    readPDFBuffer(buffer);
-
-  } catch (error) {
-    console.error("Error loading PDF:", error);
-    alert("Check console (F12) for error");
-  }
-}
-
-async function loadFromUrlDirect(url) {
-  try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      alert("Error loading PDF: " + response.status);
-      return;
+      const pageText = textContent.items.map(item => item.str).join(" ");
+      fullText += pageText + "\n";
     }
 
-    const buffer = await response.arrayBuffer();
-
-    readPDFBuffer(buffer);
+    parseText(fullText);
 
   } catch (error) {
-    alert("Failed to load PDF");
     console.error(error);
+    alert("PDF loading failed (likely CORS or blocked URL)");
   }
 }
 
