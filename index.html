@@ -2,16 +2,127 @@
 <html>
 <head>
   <title>PaisaFirst</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial;
       text-align: center;
-      margin-top: 100px;
+      margin: 40px;
+      background: #f5f7fa;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    canvas {
+      margin-top: 20px;
     }
   </style>
 </head>
+
 <body>
-  <h1>Welcome to PaisaFirst</h1>
-  <p>Upload your GPay statement and get smart insights (coming soon).</p>
+
+<div class="container">
+  <h1>PaisaFirst 💰</h1>
+  <p>Upload your expense CSV file</p>
+
+  <input type="file" id="fileInput">
+  <br>
+  <button onclick="processFile()">Analyze</button>
+
+  <h3 id="total"></h3>
+
+  <canvas id="chart"></canvas>
+</div>
+
+<script>
+
+let chart;
+
+function categorize(text) {
+  text = text.toLowerCase();
+
+  if (text.includes("swiggy") || text.includes("zomato")) return "Food";
+  if (text.includes("uber") || text.includes("ola")) return "Transport";
+  if (text.includes("amazon") || text.includes("flipkart")) return "Shopping";
+  if (text.includes("rent")) return "Rent";
+
+  return "Others";
+}
+
+function processFile() {
+  const file = document.getElementById("fileInput").files[0];
+
+  if (!file) {
+    alert("Please upload a file");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const content = e.target.result;
+    const lines = content.split("\n");
+
+    let categories = {};
+    let total = 0;
+
+    for (let line of lines) {
+      let parts = line.split(",");
+
+      if (parts.length < 2) continue;
+
+      let description = parts[0];
+      let amount = parseFloat(parts[1]);
+
+      if (isNaN(amount)) continue;
+
+      let category = categorize(description);
+
+      if (!categories[category]) categories[category] = 0;
+
+      categories[category] += amount;
+      total += amount;
+    }
+
+    document.getElementById("total").innerText = 
+      "Total Spend: ₹" + total;
+
+    drawChart(categories);
+  };
+
+  reader.readAsText(file);
+}
+
+function drawChart(data) {
+  const ctx = document.getElementById("chart");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: Object.keys(data),
+      datasets: [{
+        data: Object.values(data)
+      }]
+    }
+  });
+}
+
+</script>
+
 </body>
 </html>
